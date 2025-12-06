@@ -47,10 +47,11 @@ function M.auto_fill()
     return
   end
   
+  -- Try to extract comment first, fall back to using signature + body
   local instruction = prompt.extract_comment(func_info.function_text, func_info.language)
   if not instruction then
-    ui.show_error("No comment found in function. Use <leader>cp for interactive mode.")
-    return
+    -- No comment found, use the function signature and body as context
+    instruction = prompt.build_instruction_from_signature(func_info.function_text)
   end
   
   ui.show_progress(func_info.bufnr, func_info.start_line)
