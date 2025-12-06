@@ -94,13 +94,24 @@ local function replace_function(func_info, new_code)
   if body_node then
     -- Extract lines from the body node (excluding the braces)
     local body_start_row, _, body_end_row, _ = body_node:range()
+    
+    -- Adjust start: if first line ends with '{', start from next line
+    local first_line = completion_lines[body_start_row + 1]
+    if first_line and first_line:match('{%s*$') then
+      body_start_row = body_start_row + 1
+    end
+    
+    -- Adjust end: if last line is just '}', end before it
+    local last_line = completion_lines[body_end_row + 1]
+    if last_line and last_line:match('^%s*}%s*$') then
+      body_end_row = body_end_row - 1
+    end
+    
+    -- Extract the body content
     for i = body_start_row, body_end_row do
       local line = completion_lines[i + 1]  -- +1 for 1-indexed
       if line then
-        -- Skip lines that are just opening or closing braces
-        if not line:match('^%s*{%s*$') and not line:match('^%s*}%s*$') then
-          table.insert(body_lines, line)
-        end
+        table.insert(body_lines, line)
       end
     end
   else
