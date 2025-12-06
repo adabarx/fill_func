@@ -16,28 +16,66 @@ local function replace_function(func_info, new_code)
   local start_line = func_info.start_line
   local end_line = func_info.end_line
   
-  -- Clean up the new code (remove extra whitespace, ensure proper formatting)
-  local lines = vim.split(new_code, '\n')
+  -- Get the original function lines
+  local original_lines = vim.api.nvim_buf_get_lines(bufnr, start_line, end_line + 1, false)
   
-  -- Remove empty lines at start and end
-  while #lines > 0 and lines[1]:match('^%s*$') do
-    table.remove(lines, 1)
-  end
-  while #lines > 0 and lines[#lines]:match('^%s*$') do
-    table.remove(lines, #lines)
-  end
-  
-  -- Apply the original indent
-  local indent = func_info.indent
-  for i, line in ipairs(lines) do
-    if i > 1 and not line:match('^%s*$') then
-      -- Preserve relative indentation
-      lines[i] = indent .. line
+  -- Find where the function body starts (after opening brace)
+  local body_start = nil
+  for i, line in ipairs(original_lines) do
+    if line:match('{') then
+      body_start = start_line + i
+      break
     end
   end
   
-  -- Replace the function
-  vim.api.nvim_buf_set_lines(bufnr, start_line, end_line + 1, false, lines)
+  -- Find where the function body ends (before closing brace)
+  local body_end = nil
+  for i = #original_lines, 1, -1 do
+    if original_lines[i]:match('}') then
+      body_end = start_line + i - 2  -- -1 for 0-index, -1 to be before the brace
+      break
+    end
+  end
+  
+  if not body_start or not body_end then
+    -- Fallback: replace entire function if we can't find braces
+    local lines = vim.split(new_code, '\n')
+    vim.api.nvim_buf_set_lines(bufnr, start_line, end_line + 1, false, lines)
+    return
+  end
+  
+  -- Extract body from completion (skip signature line and closing brace)
+  local completion_lines = vim.split(new_code, '\n')
+  local body_lines = {}
+  local in_body = false
+  
+  for i, line in ipairs(completion_lines) do
+    if line:match('{') then
+      in_body = true
+    elseif line:match('^%s*}%s*$') then
+      break
+    elseif in_body then
+      table.insert(body_lines, line)
+    end
+  end
+  
+  -- If we couldn't extract body, try to use everything except first and last line
+  if #body_lines == 0 then
+    for i = 2, #completion_lines - 1 do
+      table.insert(body_lines, completion_lines[i])
+    end
+  end
+  
+  -- Clean up empty lines
+  while #body_lines > 0 and body_lines[1]:match('^%s*$') do
+    table.remove(body_lines, 1)
+  end
+  while #body_lines > 0 and body_lines[#body_lines]:match('^%s*$') do
+    table.remove(body_lines, #body_lines)
+  end
+  
+  -- Replace only the function body
+  vim.api.nvim_buf_set_lines(bufnr, body_start, body_end + 1, false, body_lines)
 end
 
 function M.auto_fill()
