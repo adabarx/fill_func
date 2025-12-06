@@ -44,28 +44,48 @@ local function replace_function(func_info, new_code)
     return
   end
   
-  -- Extract body from completion (skip signature line and closing brace)
+  -- Extract body from completion
+  -- Copilot returns the whole function, we need just the body
   local completion_lines = vim.split(new_code, '\n')
   local body_lines = {}
-  local in_body = false
+  
+  -- Strategy: find first line with { and last line with }, take everything between
+  local start_idx = nil
+  local end_idx = nil
   
   for i, line in ipairs(completion_lines) do
-    if line:match('{') then
-      in_body = true
-      -- Check if there's content after the opening brace on same line
-      local after_brace = line:match('{%s*(.+)')
-      if after_brace and after_brace ~= '' then
-        table.insert(body_lines, '    ' .. after_brace)
-      end
-    elseif line:match('^%s*}%s*$') then
-      break
-    elseif in_body then
-      table.insert(body_lines, line)
+    if not start_idx and line:match('{') then
+      start_idx = i
+    end
+    if line:match('}') then
+      end_idx = i
     end
   end
   
-  -- If we couldn't extract body, try to use everything except first and last line
-  if #body_lines == 0 then
+  if start_idx and end_idx then
+    -- Extract lines between braces
+    for i = start_idx, end_idx do
+      local line = completion_lines[i]
+      
+      if i == start_idx then
+        -- First line: get everything after {
+        local after_brace = line:match('{%s*(.*)')
+        if after_brace and after_brace ~= '' and not after_brace:match('^%s*$') then
+          table.insert(body_lines, after_brace)
+        end
+      elseif i == end_idx then
+        -- Last line: get everything before }
+        local before_brace = line:match('(.-)%s*}')
+        if before_brace and before_brace ~= '' and not before_brace:match('^%s*$') then
+          table.insert(body_lines, before_brace)
+        end
+      else
+        -- Middle lines: keep as-is
+        table.insert(body_lines, line)
+      end
+    end
+  else
+    -- Fallback: use everything except first and last line
     for i = 2, #completion_lines - 1 do
       table.insert(body_lines, completion_lines[i])
     end
