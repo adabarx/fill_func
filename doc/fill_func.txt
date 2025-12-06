@@ -1,0 +1,174 @@
+*fill_func.txt*  Fill function stubs with GitHub Copilot
+
+Author:  adabarx
+License: MIT
+Version: 1.0.0
+
+==============================================================================
+CONTENTS                                                  *fill_func-contents*
+
+    1. Introduction ........................... |fill_func-introduction|
+    2. Installation ........................... |fill_func-installation|
+    3. Usage .................................. |fill_func-usage|
+    4. Configuration .......................... |fill_func-configuration|
+    5. Commands ............................... |fill_func-commands|
+    6. Functions .............................. |fill_func-functions|
+    7. Troubleshooting ........................ |fill_func-troubleshooting|
+
+==============================================================================
+1. INTRODUCTION                                       *fill_func-introduction*
+
+Fill Func is a Neovim plugin that uses GitHub Copilot to intelligently fill
+function stubs. It supports two modes:
+
+- Auto-Fill: Extracts comments from functions and uses them as prompts
+- Interactive: Lets you provide custom instructions for any function
+
+The plugin uses Tree-sitter for accurate function detection and works with
+any language that has Tree-sitter support.
+
+==============================================================================
+2. INSTALLATION                                       *fill_func-installation*
+
+Requirements:
+- Neovim >= 0.9.0
+- nvim-treesitter plugin
+- GitHub Copilot (copilot.vim or copilot.lua)
+- Tree-sitter parsers for your languages
+
+Using lazy.nvim: >lua
+    {
+      'adabarx/fill_func',
+      dependencies = { 'nvim-treesitter/nvim-treesitter' },
+      config = function()
+        require('fill_func').setup()
+      end,
+    }
+<
+
+Using packer.nvim: >lua
+    use {
+      'adabarx/fill_func',
+      requires = { 'nvim-treesitter/nvim-treesitter' },
+      config = function()
+        require('fill_func').setup()
+      end
+    }
+<
+
+==============================================================================
+3. USAGE                                                     *fill_func-usage*
+
+AUTO-FILL MODE                                          *fill_func-auto-fill*
+
+1. Write a function stub with a comment:
+>lua
+    function fibonacci(n)
+      -- calculate the nth fibonacci number recursively
+    end
+<
+
+2. Place cursor inside function
+3. Press |<leader>cf| (or run |:FillFuncAuto|)
+4. Wait for Copilot to generate the implementation
+
+INTERACTIVE MODE                                    *fill_func-interactive*
+
+1. Place cursor inside any function
+2. Press |<leader>cp| (or run |:FillFuncPrompt|)
+3. Type your instruction in the prompt
+4. Press Enter and wait for generation
+
+==============================================================================
+4. CONFIGURATION                                     *fill_func-configuration*
+
+Configure the plugin using the setup function: >lua
+
+    require('fill_func').setup({
+      keymaps = {
+        auto_fill = '<leader>cf',
+        interactive = '<leader>cp',
+        cancel = '<Esc>',
+      },
+      timeout = 30000,
+      context_lines = 5,
+      show_progress = true,
+      progress_style = 'virtual_text',
+    })
+<
+
+OPTIONS                                               *fill_func-options*
+
+keymaps.auto_fill                              *fill_func-keymap-auto-fill*
+    Default: '<leader>cf'
+    Keymap for auto-fill mode
+
+keymaps.interactive                          *fill_func-keymap-interactive*
+    Default: '<leader>cp'
+    Keymap for interactive mode
+
+keymaps.cancel                                    *fill_func-keymap-cancel*
+    Default: '<Esc>'
+    Keymap to cancel operation
+
+timeout                                                *fill_func-timeout*
+    Default: 30000
+    Copilot request timeout in milliseconds
+
+context_lines                                    *fill_func-context-lines*
+    Default: 5
+    Number of lines before/after function to include as context
+
+show_progress                                    *fill_func-show-progress*
+    Default: true
+    Show progress indicator while generating
+
+progress_style                                  *fill_func-progress-style*
+    Default: 'virtual_text'
+    Progress indicator style: 'virtual_text' or 'floating'
+
+==============================================================================
+5. COMMANDS                                               *fill_func-commands*
+
+:FillFuncAuto                                              *:FillFuncAuto*
+    Fill function using comment as prompt. Extracts the first comment
+    found in the function body and uses it as instruction for Copilot.
+
+:FillFuncPrompt                                          *:FillFuncPrompt*
+    Open interactive prompt to generate or modify function. Works on any
+    function, not just stubs.
+
+==============================================================================
+6. FUNCTIONS                                             *fill_func-functions*
+
+fill_func.setup({config})                                *fill_func.setup()*
+    Setup function to configure the plugin.
+
+    Parameters: ~
+        {config} (table|nil) Configuration options
+
+fill_func.auto_fill()                                  *fill_func.auto_fill()*
+    Execute auto-fill mode on current function.
+
+fill_func.interactive_fill()                  *fill_func.interactive_fill()*
+    Execute interactive mode on current function.
+
+==============================================================================
+7. TROUBLESHOOTING                               *fill_func-troubleshooting*
+
+Problem: "Tree-sitter parser not available"
+Solution: Install parser with |:TSInstall| <language>
+
+Problem: "Copilot LSP client not found"
+Solution: Ensure GitHub Copilot plugin is installed and running.
+         Check with |:LspInfo|
+
+Problem: "No comment found in function"
+Solution: Either add a comment to your stub, or use interactive mode
+         with |<leader>cp|
+
+Problem: Generated code has wrong indentation
+Solution: Check your 'shiftwidth' and 'expandtab' settings
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
