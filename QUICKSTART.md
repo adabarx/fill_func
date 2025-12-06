@@ -15,6 +15,26 @@
 }
 ```
 
+**vim-plug:**
+```vim
+Plug 'nvim-treesitter/nvim-treesitter'
+Plug 'adabarx/fill_func'
+```
+Then add to your config:
+```lua
+lua require('fill_func').setup()
+```
+
+**Built-in package manager:**
+```bash
+git clone https://github.com/adabarx/fill_func.git \
+  ~/.local/share/nvim/site/pack/plugins/start/fill_func
+```
+Then add to your config:
+```lua
+require('fill_func').setup()
+```
+
 ### 2. Ensure Tree-sitter parsers are installed
 
 ```vim

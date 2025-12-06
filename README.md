@@ -49,6 +49,52 @@ use {
 }
 ```
 
+### Using [vim-plug](https://github.com/junegunn/vim-plug)
+
+```vim
+Plug 'nvim-treesitter/nvim-treesitter'
+Plug 'adabarx/fill_func'
+```
+
+Then in your `init.vim` or `init.lua`:
+
+```lua
+lua << EOF
+require('fill_func').setup()
+EOF
+```
+
+Or in pure Vimscript in `init.vim`:
+
+```vim
+" After vim-plug loads plugins
+lua require('fill_func').setup()
+```
+
+### Using Neovim's built-in package manager
+
+```bash
+# Clone into the pack directory
+git clone https://github.com/adabarx/fill_func.git \
+  ~/.local/share/nvim/site/pack/plugins/start/fill_func
+
+# Also install nvim-treesitter
+git clone https://github.com/nvim-treesitter/nvim-treesitter.git \
+  ~/.local/share/nvim/site/pack/plugins/start/nvim-treesitter
+```
+
+Then in your `init.lua`:
+
+```lua
+require('fill_func').setup()
+```
+
+Or in `init.vim`:
+
+```vim
+lua require('fill_func').setup()
+```
+
 ## Requirements
 
 - Neovim >= 0.9.0
