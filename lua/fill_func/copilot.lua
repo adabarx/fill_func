@@ -61,6 +61,9 @@ function M.generate(func_info, instruction, callback)
         return
       end
       
+      -- Debug: log what copilot returns
+      vim.fn.writefile(vim.split(text, '\n'), '/tmp/copilot_response.txt')
+      
       callback(text, nil)
     end)
   end)

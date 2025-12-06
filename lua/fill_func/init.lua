@@ -12,6 +12,14 @@ function M.setup(user_config)
 end
 
 local function replace_function(func_info, new_code)
+  -- Debug logging
+  local log = io.open('/tmp/fill_func_debug.log', 'a')
+  if log then
+    log:write(string.format("\n=== replace_function called ===\n"))
+    log:write(string.format("Copilot returned:\n%s\n", new_code))
+    log:close()
+  end
+  
   local bufnr = func_info.bufnr
   local start_line = func_info.start_line
   local end_line = func_info.end_line
@@ -115,9 +123,24 @@ local function replace_function(func_info, new_code)
       end
     end
   else
-    -- Fallback: just use all lines except first and last
-    for i = 2, #completion_lines - 1 do
-      table.insert(body_lines, completion_lines[i])
+    -- Fallback: check if this looks like a complete function or just body content
+    -- If first line contains function signature keywords, it's a complete function
+    local first_line = completion_lines[1] or ""
+    local is_complete_function = first_line:match('^%s*fn%s+') or 
+                                   first_line:match('^%s*function%s+') or
+                                   first_line:match('^%s*def%s+') or
+                                   first_line:match('^%s*func%s+')
+    
+    if is_complete_function and #completion_lines > 2 then
+      -- Strip first and last lines (function signature and closing brace)
+      for i = 2, #completion_lines - 1 do
+        table.insert(body_lines, completion_lines[i])
+      end
+    else
+      -- This is just body content, use all lines as-is
+      for i = 1, #completion_lines do
+        table.insert(body_lines, completion_lines[i])
+      end
     end
   end
   
@@ -130,6 +153,17 @@ local function replace_function(func_info, new_code)
   end
   while #body_lines > 0 and body_lines[#body_lines]:match('^%s*$') do
     table.remove(body_lines, #body_lines)
+  end
+  
+  -- Debug logging
+  local log = io.open('/tmp/fill_func_debug.log', 'a')
+  if log then
+    log:write(string.format("Final body_lines to insert (%d lines):\n", #body_lines))
+    for i, line in ipairs(body_lines) do
+      log:write(string.format("  %d: [%s]\n", i, line))
+    end
+    log:write(string.format("Inserting at buffer lines %d to %d\n", body_start, body_end + 1))
+    log:close()
   end
   
   -- Replace only the function body
