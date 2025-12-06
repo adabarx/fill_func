@@ -56,6 +56,7 @@ function M.generate(func_info, instruction, callback)
       uri = vim.uri_from_bufnr(func_info.bufnr),
       relativePath = vim.fn.expand('%:t'),
       languageId = func_info.language,
+      version = 1,
       position = { line = func_info.start_line, character = 0 },
     }
   }
