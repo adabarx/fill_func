@@ -188,13 +188,20 @@ More languages work automatically with default C-style comment detection.
 - Use interactive mode (`<leader>cp`) instead
 - Or add a comment to your function stub
 
+## Documentation
+
+- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute getting started guide
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture and design decisions
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development and contribution guidelines
+- **`:help fill_func`** - Built-in help documentation
+
 ## License
 
 MIT License - See LICENSE file for details
 
 ## Contributing
 
-Contributions welcome! Please open an issue or PR on GitHub.
+Contributions welcome! Please open an issue or PR on GitHub. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Credits
 
