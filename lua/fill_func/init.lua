@@ -52,6 +52,11 @@ local function replace_function(func_info, new_code)
   for i, line in ipairs(completion_lines) do
     if line:match('{') then
       in_body = true
+      -- Check if there's content after the opening brace on same line
+      local after_brace = line:match('{%s*(.+)')
+      if after_brace and after_brace ~= '' then
+        table.insert(body_lines, '    ' .. after_brace)
+      end
     elseif line:match('^%s*}%s*$') then
       break
     elseif in_body then
