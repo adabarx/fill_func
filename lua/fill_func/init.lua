@@ -44,57 +44,74 @@ local function replace_function(func_info, new_code)
     return
   end
   
-  -- Extract body from completion
-  -- Copilot returns the whole function, we need just the body
+  -- Use Tree-sitter to parse the completion and extract the function body
   local completion_lines = vim.split(new_code, '\n')
-  local body_lines = {}
   
-  -- DEBUG: Let's see what we got
-  vim.notify("Completion from Copilot:\n" .. new_code, vim.log.levels.INFO)
+  -- Create a temporary buffer to parse the completion
+  local temp_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(temp_buf, 0, -1, false, completion_lines)
+  vim.bo[temp_buf].filetype = func_info.language
   
-  -- Strategy: Skip lines until we find the function signature {, then get everything until last }
-  local start_idx = nil
-  local end_idx = nil
+  -- Wait for treesitter to parse
+  vim.wait(100)
   
-  -- Find the function signature line (has the opening brace for function body)
-  for i, line in ipairs(completion_lines) do
-    if line:match('%)%s*{') or line:match('%)%s*V%s*{') then
-      -- This is the function signature line with {
-      start_idx = i + 1  -- Start from NEXT line
+  local parser = vim.treesitter.get_parser(temp_buf)
+  if not parser then
+    -- Fallback if no parser
+    vim.api.nvim_buf_delete(temp_buf, { force = true })
+    vim.api.nvim_buf_set_lines(bufnr, body_start, body_end + 1, false, completion_lines)
+    return
+  end
+  
+  local tree = parser:parse()[1]
+  local root = tree:root()
+  
+  -- Find the function node (should be the root or near it)
+  local function_node = nil
+  for node in root:iter_children() do
+    local node_type = node:type()
+    if node_type:match('function') or node_type:match('method') then
+      function_node = node
       break
     end
   end
   
-  -- If we didn't find signature, just use first { as before
-  if not start_idx then
-    for i, line in ipairs(completion_lines) do
-      if line:match('{') then
-        start_idx = i
-        break
+  if not function_node then
+    function_node = root:child(0)
+  end
+  
+  -- Find the block/body node inside the function
+  local body_node = nil
+  for child in function_node:iter_children() do
+    local child_type = child:type()
+    if child_type == 'block' or child_type == 'body' or child_type:match('body') then
+      body_node = child
+      break
+    end
+  end
+  
+  local body_lines = {}
+  if body_node then
+    -- Extract lines from the body node (excluding the braces)
+    local body_start_row, _, body_end_row, _ = body_node:range()
+    for i = body_start_row, body_end_row do
+      local line = completion_lines[i + 1]  -- +1 for 1-indexed
+      if line then
+        -- Skip lines that are just opening or closing braces
+        if not line:match('^%s*{%s*$') and not line:match('^%s*}%s*$') then
+          table.insert(body_lines, line)
+        end
       end
     end
-  end
-  
-  -- Find last closing brace
-  for i = #completion_lines, 1, -1 do
-    if completion_lines[i]:match('}') then
-      end_idx = i
-      break
-    end
-  end
-  
-  if start_idx and end_idx then
-    -- Extract lines from start to end
-    for i = start_idx, end_idx - 1 do  -- -1 to exclude the closing brace line
-      local line = completion_lines[i]
-      table.insert(body_lines, line)
-    end
   else
-    -- Fallback: use everything except first and last line
+    -- Fallback: just use all lines except first and last
     for i = 2, #completion_lines - 1 do
       table.insert(body_lines, completion_lines[i])
     end
   end
+  
+  -- Clean up temp buffer
+  vim.api.nvim_buf_delete(temp_buf, { force = true })
   
   -- Clean up empty lines
   while #body_lines > 0 and body_lines[1]:match('^%s*$') do
