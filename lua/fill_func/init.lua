@@ -49,40 +49,45 @@ local function replace_function(func_info, new_code)
   local completion_lines = vim.split(new_code, '\n')
   local body_lines = {}
   
-  -- Strategy: find first line with { and last line with }, take everything between
+  -- DEBUG: Let's see what we got
+  vim.notify("Completion from Copilot:\n" .. new_code, vim.log.levels.INFO)
+  
+  -- Strategy: Skip lines until we find the function signature {, then get everything until last }
   local start_idx = nil
   local end_idx = nil
   
+  -- Find the function signature line (has the opening brace for function body)
   for i, line in ipairs(completion_lines) do
-    if not start_idx and line:match('{') then
-      start_idx = i
+    if line:match('%)%s*{') or line:match('%)%s*V%s*{') then
+      -- This is the function signature line with {
+      start_idx = i + 1  -- Start from NEXT line
+      break
     end
-    if line:match('}') then
+  end
+  
+  -- If we didn't find signature, just use first { as before
+  if not start_idx then
+    for i, line in ipairs(completion_lines) do
+      if line:match('{') then
+        start_idx = i
+        break
+      end
+    end
+  end
+  
+  -- Find last closing brace
+  for i = #completion_lines, 1, -1 do
+    if completion_lines[i]:match('}') then
       end_idx = i
+      break
     end
   end
   
   if start_idx and end_idx then
-    -- Extract lines between braces
-    for i = start_idx, end_idx do
+    -- Extract lines from start to end
+    for i = start_idx, end_idx - 1 do  -- -1 to exclude the closing brace line
       local line = completion_lines[i]
-      
-      if i == start_idx then
-        -- First line: get everything after {
-        local after_brace = line:match('{%s*(.*)')
-        if after_brace and after_brace ~= '' and not after_brace:match('^%s*$') then
-          table.insert(body_lines, after_brace)
-        end
-      elseif i == end_idx then
-        -- Last line: get everything before }
-        local before_brace = line:match('(.-)%s*}')
-        if before_brace and before_brace ~= '' and not before_brace:match('^%s*$') then
-          table.insert(body_lines, before_brace)
-        end
-      else
-        -- Middle lines: keep as-is
-        table.insert(body_lines, line)
-      end
+      table.insert(body_lines, line)
     end
   else
     -- Fallback: use everything except first and last line
