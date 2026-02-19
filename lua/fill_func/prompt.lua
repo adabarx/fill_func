@@ -34,7 +34,7 @@ end
 
 function M.get_user_prompt(callback)
   vim.ui.input({
-    prompt = 'Copilot Instruction: ',
+    prompt = 'OpenCode Instruction: ',
     default = '',
   }, function(input)
     if input and input ~= '' then
@@ -47,7 +47,7 @@ end
 
 function M.build_instruction_from_signature(function_text)
   -- Use the function signature and body as the instruction
-  -- Copilot will understand what to do from the context
+  -- OpenCode will understand what to do from the context
   return "complete this function based on its signature and any existing code"
 end
 

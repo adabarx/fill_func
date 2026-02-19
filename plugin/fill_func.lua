@@ -8,14 +8,14 @@ local fill_func = require('fill_func')
 
 vim.api.nvim_create_user_command('FillFuncAuto', function()
   fill_func.auto_fill()
-end, { desc = 'Fill function with Copilot using comment as prompt' })
+end, { desc = 'Fill function with OpenCode using comment as prompt' })
 
 vim.api.nvim_create_user_command('FillFuncPrompt', function()
   fill_func.interactive_fill()
-end, { desc = 'Fill/edit function with Copilot using custom prompt' })
+end, { desc = 'Fill/edit function with OpenCode using custom prompt' })
 
 local config = require('fill_func.config')
 local opts = config.get()
 
-vim.keymap.set('n', opts.keymaps.auto_fill, '<cmd>FillFuncAuto<cr>', { desc = 'Copilot: Fill function' })
-vim.keymap.set('n', opts.keymaps.interactive, '<cmd>FillFuncPrompt<cr>', { desc = 'Copilot: Prompt function' })
+vim.keymap.set('n', opts.keymaps.auto_fill, '<cmd>FillFuncAuto<cr>', { desc = 'OpenCode: Fill function' })
+vim.keymap.set('n', opts.keymaps.interactive, '<cmd>FillFuncPrompt<cr>', { desc = 'OpenCode: Prompt function' })

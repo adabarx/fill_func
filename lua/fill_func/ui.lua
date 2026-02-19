@@ -13,7 +13,7 @@ function M.show_progress(bufnr, line)
   
   if config.progress_style == 'virtual_text' then
     current_extmark = vim.api.nvim_buf_set_extmark(bufnr, ns_id, line, 0, {
-      virt_text = { { '  Generating with Copilot...', 'Comment' } },
+      virt_text = { { '  Generating with OpenCode...', 'Comment' } },
       virt_text_pos = 'eol',
     })
   elseif config.progress_style == 'floating' then
@@ -23,7 +23,7 @@ function M.show_progress(bufnr, line)
     local col = 0
     
     local buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { ' Generating with Copilot...' })
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { ' Generating with OpenCode...' })
     
     local opts = {
       relative = 'win',

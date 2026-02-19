@@ -3,7 +3,7 @@ local M = {}
 
 local detector = require('fill_func.detector')
 local prompt = require('fill_func.prompt')
-local copilot = require('fill_func.copilot')
+local opencode = require('fill_func.opencode')
 local ui = require('fill_func.ui')
 local config = require('fill_func.config')
 
@@ -16,7 +16,7 @@ local function replace_function(func_info, new_code)
   local log = io.open('/tmp/fill_func_debug.log', 'a')
   if log then
     log:write(string.format("\n=== replace_function called ===\n"))
-    log:write(string.format("Copilot returned:\n%s\n", new_code))
+    log:write(string.format("OpenCode returned:\n%s\n", new_code))
     log:close()
   end
   
@@ -186,7 +186,7 @@ function M.auto_fill()
   
   ui.show_progress(func_info.bufnr, func_info.start_line)
   
-  copilot.generate(func_info, instruction, function(result, error)
+  opencode.generate(func_info, instruction, function(result, error)
     ui.hide_progress()
     
     if error then
@@ -213,7 +213,7 @@ function M.interactive_fill()
     
     ui.show_progress(func_info.bufnr, func_info.start_line)
     
-    copilot.generate(func_info, instruction, function(result, error)
+    opencode.generate(func_info, instruction, function(result, error)
       ui.hide_progress()
       
       if error then

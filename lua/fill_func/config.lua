@@ -7,6 +7,7 @@ local defaults = {
     interactive = '<leader>cp',
     cancel = '<Esc>',
   },
+  opencode_path = 'opencode', -- path to opencode binary
   timeout = 30000, -- 30 seconds
   context_lines = 5, -- lines before/after function for context
   show_progress = true,
