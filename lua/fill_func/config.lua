@@ -1,17 +1,8 @@
--- config.lua - Configuration management
 local M = {}
 
 local defaults = {
-  keymaps = {
-    auto_fill = '<leader>cf',
-    interactive = '<leader>cp',
-    cancel = '<Esc>',
-  },
-  opencode_path = 'opencode', -- path to opencode binary
-  timeout = 30000, -- 30 seconds
-  context_lines = 5, -- lines before/after function for context
-  show_progress = true,
-  progress_style = 'virtual_text', -- 'virtual_text' or 'floating'
+  opencode_path = 'opencode',
+  timeout = 30000,
 }
 
 local config = vim.deepcopy(defaults)

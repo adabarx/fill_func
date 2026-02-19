@@ -1,45 +1,63 @@
--- opencode.lua - OpenCode CLI integration
 local M = {}
 
-function M.generate(func_info, instruction, callback)
-  local config = require('fill_func.config').get()
-  local opencode_cmd = config.opencode_path or 'opencode'
+--- Build the prompt sent to opencode
+--- @param opts table { write_text, read_context, filepath, prompt }
+--- @return string
+local function build_prompt(opts)
+  local parts = {}
 
-  -- Check if opencode is available
-  if vim.fn.executable(opencode_cmd) ~= 1 then
-    callback(nil, "opencode not found in PATH. Install it from https://opencode.ai or set config.opencode_path")
+  -- Read context
+  table.insert(parts, 'CONTEXT (read-only reference):\n')
+  table.insert(parts, opts.read_context)
+  table.insert(parts, '\n')
+
+  -- Write area
+  table.insert(parts, string.format(
+    'CODE TO MODIFY (from %s, lines %d-%d):\n',
+    opts.filepath, opts.write_start, opts.write_end
+  ))
+  table.insert(parts, opts.write_text)
+  table.insert(parts, '\n')
+
+  -- Instruction
+  table.insert(parts, 'INSTRUCTION:\n')
+  table.insert(parts, opts.prompt)
+  table.insert(parts, '\n')
+
+  -- Output format
+  table.insert(parts,
+    'Return ONLY the replacement code for the "CODE TO MODIFY" section. '
+    .. 'No explanations, no markdown fences, no extra text. '
+    .. 'Just the raw code that should replace the marked section.'
+  )
+
+  return table.concat(parts, '\n')
+end
+
+--- Call opencode to generate code
+--- @param opts table { write_text, write_start, write_end, read_context, filepath, prompt }
+--- @param callback fun(result: string|nil, err: string|nil)
+function M.generate(opts, callback)
+  local cfg = require('fill_func.config').get()
+  local cmd = cfg.opencode_path or 'opencode'
+
+  if vim.fn.executable(cmd) ~= 1 then
+    callback(nil, 'opencode not found in PATH')
     return
   end
 
-  -- Build the prompt with function context and instruction
-  local prompt_text = string.format(
-    "I have the following %s function:\n\n```%s\n%s\n```\n\n"
-    .. "Instruction: %s\n\n"
-    .. "Return ONLY the complete rewritten function with no explanation, no markdown fences, and no extra text. "
-    .. "Just the raw function code.",
-    func_info.language,
-    func_info.language,
-    func_info.function_text,
-    instruction
-  )
+  local prompt_text = build_prompt(opts)
 
-  -- Shell out to opencode run asynchronously
   local stdout_chunks = {}
   local stderr_chunks = {}
 
-  vim.fn.jobstart({
-    opencode_cmd, 'run',
-    '--format', 'text',
-    prompt_text,
-  }, {
+  vim.fn.jobstart({ cmd, 'run', '--format', 'text', prompt_text }, {
     stdout_buffered = true,
     stderr_buffered = true,
     on_stdout = function(_, data)
       if data then
         for _, line in ipairs(data) do
-          if line ~= '' then
-            table.insert(stdout_chunks, line)
-          end
+          table.insert(stdout_chunks, line)
         end
       end
     end,
@@ -59,22 +77,15 @@ function M.generate(func_info, instruction, callback)
           if err_msg == '' then
             err_msg = 'opencode exited with code ' .. exit_code
           end
-          callback(nil, "OpenCode request failed: " .. err_msg)
+          callback(nil, err_msg)
           return
         end
 
         local text = table.concat(stdout_chunks, '\n')
-
-        if not text or text == '' then
-          callback(nil, "No output returned from OpenCode. Check your configuration with `opencode auth list`")
+        if not text or vim.trim(text) == '' then
+          callback(nil, 'no output from opencode')
           return
         end
-
-        -- Strip markdown code fences if the model included them despite instructions
-        text = text:gsub('^%s*```[%w]*%s*\n', ''):gsub('\n%s*```%s*$', '')
-
-        -- Debug: log what opencode returns
-        vim.fn.writefile(vim.split(text, '\n'), '/tmp/opencode_response.txt')
 
         callback(text, nil)
       end)
